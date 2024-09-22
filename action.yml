@@ -1,0 +1,99 @@
+---
+name: action-rotate-hcp-terraform-user-token
+description: Rotates a HCP Terraform user token stored as a secret in a GitHub repository.
+author: Ben Dwyer (github.com/bendwyer)
+
+inputs:
+  github_token:
+    description: GitHub token used for writing the HCP Terraform user token to the repository secret store.
+    required: false
+    default: ${{ github.token }}
+  github_secrets_name:
+    description: Name of the secret in the repository secret store where the token will be written.
+    required: false
+    default: HCP_TERRAFORM_USER_TOKEN
+  hcp_terraform_user_token:
+    description: HCP Terraform user token to be rotated. This token must already exist and be saved as a repository secret before running this action.
+    required: true
+  hcp_terraform_user_token_description:
+    description: Description for the HCP Terraform user token. Must be the same for the original and new tokens.
+    required: false
+    default: github-token
+  hcp_terraform_user_token_expiration:
+    description: Time in days when the HCP Terraform user token will expire.
+    default: "30"
+
+runs:
+  using: composite
+  steps:
+    - name: Rotate HCP Terraform user token
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        echo "Set token"
+        TOKEN=${{ inputs.hcp_terraform_user_token }}
+        echo "Mask token"
+        echo "::add-mask::$TOKEN"
+        echo "Set token description"
+        TOKEN_DESCRIPTION=${{ inputs.hcp_terraform_user_token_description }}
+        echo "Set expiration"
+        TOKEN_EXPIRATION=${{ inputs.hcp_terraform_user_token_expiration }}
+        SECRETS_NAME=${{ inputs.github_secrets_name }}
+        echo "Set user ID"
+        ID=$(curl -Ss --fail-with-body --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://app.terraform.io/api/v2/account/details | jq -r '.data.id')
+        echo "Check if date should be calculated"
+        if [[ -n $TOKEN_EXPIRATION ]];
+        then
+          echo "Calculate date"
+          DATE=$(date -d "+$TOKEN_EXPIRATION days" -u +%Y-%m-%dT%H:%M:%S.%3NZ)
+        fi
+        echo "Get all token info"
+        ALL_TOKENS=$(curl -Ss --fail-with-body --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://app.terraform.io/api/v2/users/$ID/authentication-tokens)
+        echo "Filter matched token info"
+        MATCHED_TOKEN_INFO=$(echo $ALL_TOKENS | jq -r --arg TOKEN_DESCRIPTION "$TOKEN_DESCRIPTION" --arg DATE "$DATE" '[.data[] | {id,attributes} | select(.attributes.description==$TOKEN_DESCRIPTION) | select(.attributes."expired-at"!=$DATE)]')
+        echo "Get matched token IDs"
+        MATCHED_TOKEN_IDS=$(echo $MATCHED_TOKEN_INFO | jq -c 'map(.id)')
+        echo "Get matched token count"
+        MATCHED_TOKEN_COUNT=$(echo $MATCHED_TOKEN_INFO | jq -c 'map(.id) | length')
+        if [[ $MATCHED_TOKEN_COUNT -ge 2 ]]
+        then
+          echo "ERROR: $MATCHED_TOKEN_COUNT tokens matched search criteria. Please ensure that 0 or 1 tokens match the search criteria." >> /dev/stderr
+          exit 1
+        else
+          echo "Matched token IDs: $MATCHED_TOKEN_IDS"
+          echo "Matched token count: $MATCHED_TOKEN_COUNT"
+        fi
+        echo "Create json payload"
+        PAYLOAD=$(cat <<EOF
+        {
+          "data": {
+            "type": "authentication-tokens",
+            "attributes": {
+              "description":"$TOKEN_DESCRIPTION",
+              "expired-at": "$DATE"
+            }
+          }
+        }
+        EOF
+        )
+        echo "Compress payload"
+        PAYLOAD_COMPRESSED=$(echo $PAYLOAD | jq -c)
+        echo "Check if new user token should be created"
+        if [[ $MATCHED_TOKEN_COUNT == 0 || $MATCHED_TOKEN_COUNT == 1 ]]
+        then
+          echo "Create new token"
+          NEW_TOKEN=$(curl -Ss --fail-with-body --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data $PAYLOAD_COMPRESSED https://app.terraform.io/api/v2/users/$ID/authentication-tokens | jq -r '.data.attributes.token')
+          echo "Mask new token"
+          echo "::add-mask::$NEW_TOKEN"
+          echo "Write new token to repository secrets"
+          gh secret set $SECRETS_NAME --body "$NEW_TOKEN" --app actions
+        fi
+        echo "Check if old user token should be deleted"
+        if [[ $MATCHED_TOKEN_COUNT == 1 ]]
+        then
+          echo "Get matched token ID"
+          MATCHED_TOKEN_ID=$(echo $MATCHED_TOKEN_IDS | jq -r '.[]')
+          echo "Delete old user token"
+          curl -Ss --fail-with-body --header "Authorization: Bearer $NEW_TOKEN" --header "Content-Type: application/vnd.api+json" --request DELETE "https://app.terraform.io/api/v2/authentication-tokens/$MATCHED_TOKEN_ID"
+        fi
+      shell: bash

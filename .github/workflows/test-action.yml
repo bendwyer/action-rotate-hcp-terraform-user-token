@@ -1,0 +1,33 @@
+---
+name: test-action
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - action.yml
+  schedule:
+    - cron: '0 5 1 * *'
+
+jobs:
+  test-action:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Generate GitHub App token
+        uses: actions/create-github-app-token@v1
+        id: app_token
+        with:
+          app-id: ${{ vars.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run action
+        uses: ./
+        with:
+          github_token: ${{ steps.app_token.outputs.token }}
+          hcp_terraform_user_token: ${{ secrets.HCP_TERRAFORM_USER_TOKEN }}
+          hcp_terraform_user_token_description: action-rotate-hcp-terraform-user-token
+          hcp_terraform_user_token_expiration: 35

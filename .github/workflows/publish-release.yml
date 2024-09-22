@@ -1,0 +1,16 @@
+---
+  name: publish-release
+
+  on:
+    push:
+      tags:
+        - "v[0-9]+.[0-9]+.[0-9]+"
+        - "v[0-9]+.[0-9]+.[0-9]+-[a-zA-Z]*"
+
+  jobs:
+    publish-release:
+      uses: bendwyer/github-workflows/.github/workflows/github-action-publish-release.yml@main
+      with:
+        gh_app_id: ${{ vars.GH_APP_ID }}
+      secrets:
+        gh_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}

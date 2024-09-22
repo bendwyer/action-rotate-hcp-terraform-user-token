@@ -1,0 +1,17 @@
+---
+name: bump-version-and-push-tag
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  bump-version-and-push-tag:
+    uses: bendwyer/github-workflows/.github/workflows/github-action-bump-version-push-tag.yml@main
+    with:
+      gh_app_id: ${{ vars.GH_APP_ID }}
+    secrets:
+      gh_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}

@@ -5,9 +5,8 @@ author: Ben Dwyer (github.com/bendwyer)
 
 inputs:
   github_token:
-    description: GitHub token used for writing the HCP Terraform user token to the repository secret store.
-    required: false
-    default: ${{ github.token }}
+    description: "GitHub token used for writing the HCP Terraform user token to the repository secret store. Requires the repository permission secrets:write. The repository permission environments:write is optional."
+    required: true
   github_secrets_name:
     description: Name of the secret in the repository secret store where the token will be written.
     required: false
@@ -86,7 +85,7 @@ runs:
           echo "Mask new token"
           echo "::add-mask::$NEW_TOKEN"
           echo "Write new token to repository secrets"
-          gh secret set $SECRETS_NAME --body "$NEW_TOKEN" --app actions
+          gh secret set $SECRETS_NAME --body "$NEW_TOKEN" --repo ${{ github.repository }} --app actions
         fi
         echo "Check if old user token should be deleted"
         if [[ $MATCHED_TOKEN_COUNT == 1 ]]

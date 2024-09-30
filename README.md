@@ -57,7 +57,22 @@ This action is a `composite` action.
 ```
 <!-- action-docs-all source="action.yml" project="bendwyer/action-rotate-hcp-terraform-user-token" version="v1" -->
 
+Commits
+-------
+
+[Commit headers](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#commit-header) are expected in order for version bumping to work correctly:
+
+- **build**: Changes that affect the build system or external dependencies
+- **ci**: Changes to CI configuration files and scripts
+- **docs**: Documentation only changes
+- **feat**: A new feature
+- **fix**: A bug fix
+- **perf**: A code change that improves performance
+- **refactor**: A code change that neither fixes a bug nor adds a feature
+- **test**: Adding missing tests or correcting existing tests
+
 Resources
 ---------
 
 - [Changing Passwords and Updating Tokens Outside of the Terraform Cloud and Terraform Enterprise UI](https://support.hashicorp.com/hc/en-us/articles/4402342106003-Changing-Passwords-and-Updating-Tokens-Outside-of-the-Terraform-Cloud-and-Terraform-Enterprise-UI)
+- [Create or update a repository secret](https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret)

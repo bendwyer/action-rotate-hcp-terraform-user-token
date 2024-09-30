@@ -5,7 +5,7 @@ author: Ben Dwyer (github.com/bendwyer)
 
 inputs:
   github_token:
-    description: "GitHub token used for writing the HCP Terraform user token to the repository secret store. Requires the repository permission secrets:write. The repository permission environments:write is optional."
+    description: "GitHub token used for writing the HCP Terraform user token to the repository secret store. Requires the repository permission secrets:write."
     required: true
   github_secrets_name:
     description: Name of the secret in the repository secret store where the token will be written.

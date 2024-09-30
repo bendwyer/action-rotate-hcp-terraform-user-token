@@ -9,7 +9,7 @@ Rotates a HCP Terraform user token stored as a secret in a GitHub repository.
 
 | name | description | required | default |
 | --- | --- | --- | --- |
-| `github_token` | <p>GitHub token used for writing the HCP Terraform user token to the repository secret store. Requires the repository permission secrets:write. The repository permission environments:write is optional.</p> | `true` | `""` |
+| `github_token` | <p>GitHub token used for writing the HCP Terraform user token to the repository secret store. Requires the repository permission secrets:write.</p> | `true` | `""` |
 | `github_secrets_name` | <p>Name of the secret in the repository secret store where the token will be written.</p> | `false` | `HCP_TERRAFORM_USER_TOKEN` |
 | `hcp_terraform_user_token` | <p>HCP Terraform user token to be rotated. This token must already exist and be saved as a repository secret before running this action.</p> | `true` | `""` |
 | `hcp_terraform_user_token_description` | <p>Description for the HCP Terraform user token. Must be the same for the original and new tokens.</p> | `false` | `github-token` |
@@ -26,7 +26,7 @@ This action is a `composite` action.
 - uses: bendwyer/action-rotate-hcp-terraform-user-token@v1
   with:
     github_token:
-    # GitHub token used for writing the HCP Terraform user token to the repository secret store. Requires the repository permission secrets:write. The repository permission environments:write is optional.
+    # GitHub token used for writing the HCP Terraform user token to the repository secret store. Requires the repository permission secrets:write.
     #
     # Required: true
     # Default: ""

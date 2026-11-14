@@ -2,9 +2,7 @@
 name: bump-version-and-push-tag
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     branches:
       - main
 
